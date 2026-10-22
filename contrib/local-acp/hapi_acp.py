@@ -63,6 +63,7 @@ def proxy(record_path, command):
     child = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                              stderr=sys.stderr, env=env, text=True, bufsize=1)
     pending = {}
+    child_stdin_lock = threading.Lock()
     errors = []
 
     def forward_input():
@@ -75,8 +76,9 @@ def proxy(record_path, command):
                     if native_resume:
                         request['method'] = 'session/load'
                         request['params']['sessionId'] = native_resume
-                child.stdin.write(json.dumps(request, ensure_ascii=False) + '\n')
-                child.stdin.flush()
+                with child_stdin_lock:
+                    child.stdin.write(json.dumps(request, ensure_ascii=False) + '\n')
+                    child.stdin.flush()
         except (BrokenPipeError, OSError):
             pass
         except Exception:
@@ -112,8 +114,9 @@ def proxy(record_path, command):
                         if wanted_mode not in [o['id'] for o in options]: raise RuntimeError('Requested CodeBuddy permission mode not offered')
                         if modes.get('currentModeId') != wanted_mode:
                             mode_request_id = 'hapi-permission-' + str(uuid.uuid4())
-                            child.stdin.write(json.dumps({'jsonrpc':'2.0','id':mode_request_id,'method':'session/set_mode','params':{'sessionId':native_resume or result['sessionId'],'modeId':wanted_mode}}) + '\n')
-                            child.stdin.flush()
+                            with child_stdin_lock:
+                                child.stdin.write(json.dumps({'jsonrpc':'2.0','id':mode_request_id,'method':'session/set_mode','params':{'sessionId':native_resume or result['sessionId'],'modeId':wanted_mode}}) + '\n')
+                                child.stdin.flush()
                             while True:
                                 mode_line = child.stdout.readline()
                                 if not mode_line: raise RuntimeError('CodeBuddy exited while setting permissions')
@@ -125,6 +128,28 @@ def proxy(record_path, command):
                                 print(json.dumps(mode_reply,ensure_ascii=False),flush=True)
                         result['modes'] = modes
                         update_state(record_path, {'permission_mode':wanted_mode,'permission_modes':[{'value':o['id'],'name':o.get('name',o['id'])} for o in options if o['id'] != 'delegate']})
+                    if record.get('agent') == 'codebuddy' and isinstance(result.get('models'),dict):
+                        model_catalog=result['models'];native_models=model_catalog.get('availableModels',[])
+                        wanted_model=record.get('requested_model')
+                        model_id=model_catalog.get('currentModelId')
+                        choice=next((o for o in native_models if wanted_model in (o.get('modelId'),o.get('name'))),None) if wanted_model else None
+                        if wanted_model and not choice:raise RuntimeError('Requested CodeBuddy model not offered by this account')
+                        if choice and choice.get('modelId')!=model_id:
+                            model_request_id='hapi-cb-model-'+str(uuid.uuid4())
+                            with child_stdin_lock:
+                                child.stdin.write(json.dumps({'jsonrpc':'2.0','id':model_request_id,'method':'session/set_model','params':{'sessionId':native_resume or result['sessionId'],'modelId':choice['modelId']}})+'\n')
+                                child.stdin.flush()
+                            while True:
+                                model_line=child.stdout.readline()
+                                if not model_line:raise RuntimeError('CodeBuddy exited during model change')
+                                model_reply=json.loads(model_line)
+                                if model_reply.get('id')==model_request_id and 'method' not in model_reply:
+                                    if model_reply.get('error'):raise RuntimeError('CodeBuddy rejected model change')
+                                    model_id=choice['modelId']
+                                    if isinstance(model_reply.get('result'),dict):model_catalog.update(model_reply['result'].get('models') or {})
+                                    break
+                                print(json.dumps(model_reply,ensure_ascii=False),flush=True)
+                        update_state(record_path,{'model':model_id,'available_models':[{'value':o['modelId'],'name':o.get('name',o['modelId']),'description':o.get('description','')} for o in native_models]})
                     if record.get('agent') == 'zcode':
                         mode_config = next((c for c in result.get('configOptions',[]) if c.get('category') == 'mode' or c.get('id') == 'mode'), None)
                         if mode_config:
@@ -133,8 +158,9 @@ def proxy(record_path, command):
                             if wanted_mode not in [o['value'] for o in mode_choices]: raise RuntimeError('Requested ZCode mode is not offered')
                             if mode_config.get('currentValue') != wanted_mode:
                                 mode_request_id = 'hapi-zcode-mode-' + str(uuid.uuid4())
-                                child.stdin.write(json.dumps({'jsonrpc':'2.0','id':mode_request_id,'method':'session/set_config_option','params':{'sessionId':native_resume or result['sessionId'],'configId':mode_config['id'],'value':wanted_mode}}) + '\n')
-                                child.stdin.flush()
+                                with child_stdin_lock:
+                                    child.stdin.write(json.dumps({'jsonrpc':'2.0','id':mode_request_id,'method':'session/set_config_option','params':{'sessionId':native_resume or result['sessionId'],'configId':mode_config['id'],'value':wanted_mode}}) + '\n')
+                                    child.stdin.flush()
                                 while True:
                                     mode_line = child.stdout.readline()
                                     if not mode_line: raise RuntimeError('ZCode exited during mode change')
@@ -156,8 +182,9 @@ def proxy(record_path, command):
                             raise RuntimeError('Requested model is not offered by this agent account')
                         if wanted and wanted != current:
                             request_id = 'hapi-model-' + str(uuid.uuid4())
-                            child.stdin.write(json.dumps({'jsonrpc':'2.0','id':request_id,'method':'session/set_config_option','params':{'sessionId': native_resume or result['sessionId'], 'configId': config['id'], 'value':wanted}}) + '\n')
-                            child.stdin.flush()
+                            with child_stdin_lock:
+                                child.stdin.write(json.dumps({'jsonrpc':'2.0','id':request_id,'method':'session/set_config_option','params':{'sessionId': native_resume or result['sessionId'], 'configId': config['id'], 'value':wanted}}) + '\n')
+                                child.stdin.flush()
                             while True:
                                 reply_line = child.stdout.readline()
                                 if not reply_line: raise RuntimeError('Agent exited during model selection')
@@ -217,6 +244,10 @@ def launch(agent, argv):
         if record['agent'] != agent or not record.get('native_id'):
             raise SystemExit('Agent mismatch or native session missing.')
         remote = hub.request('/api/sessions/' + existing)['session']
+        lifecycle = (remote.get('metadata') or {}).get('lifecycleState')
+        archive_reason = (remote.get('metadata') or {}).get('archiveReason')
+        if lifecycle == 'archived' and archive_reason != 'Hub restart':
+            raise SystemExit('This session was explicitly archived; refusing automatic resume.')
         if remote.get('active'):
             raise SystemExit('Session is already online: https://hapi.axgu.top:26008/sessions/' + existing)
         cwd = record['cwd']
