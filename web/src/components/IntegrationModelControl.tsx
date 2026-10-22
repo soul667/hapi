@@ -27,7 +27,15 @@ export function IntegrationModelControl(props: { api: ApiClient | null; sessionI
             }}>
                 {!isBuddy && !current ? <option value="" disabled>当前模型</option> : null}
                 {(isBuddy ? info.permissionModes || [] : info.models).map(model => <option key={model.value} value={model.value}>{model.value === 'fullAccess' ? '全部执行（Full Access）' : model.name}</option>)}
-            </select><span role="status" className="text-[var(--app-hint)]">{pending ? '正在切换并恢复原会话…' : props.busy ? '当前任务结束后可切换' : '切换时短暂重连，保留会话上下文'}</span>
+            </select>
+            {!isBuddy && info.permissionModes?.length ? <><label htmlFor={`zcode-permission-${props.sessionId}`}>执行权限</label><select id={`zcode-permission-${props.sessionId}`} aria-label="ZCode 执行权限" className="rounded border border-[var(--app-border)] bg-[var(--app-bg)] px-2 py-1" value={info.permissionMode} disabled={pending || props.busy} onChange={async event => {
+                if (!props.api) return
+                setPending(true); setError('')
+                try { setInfo(await props.api.setIntegrationPermission<Info>(props.sessionId, event.target.value)) }
+                catch (e) { setError(e instanceof Error ? e.message : '权限变更失败') }
+                finally { setPending(false) }
+            }}>{info.permissionModes.map(mode => <option key={mode.value} value={mode.value}>{mode.value === 'yolo' ? '全部执行（YOLO）' : mode.value === 'build' ? '构建（需确认）' : mode.name}</option>)}</select></> : null}
+            <span role="status" className="text-[var(--app-hint)]">{pending ? '正在切换并恢复原会话…' : props.busy ? '当前任务结束后可切换' : '切换时短暂重连，保留会话上下文'}</span>
         </div>{error ? <p role="alert" className="mt-1 text-red-600">{error}</p> : null}
     </div>
 }

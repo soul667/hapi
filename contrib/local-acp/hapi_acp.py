@@ -125,6 +125,27 @@ def proxy(record_path, command):
                                 print(json.dumps(mode_reply,ensure_ascii=False),flush=True)
                         result['modes'] = modes
                         update_state(record_path, {'permission_mode':wanted_mode,'permission_modes':[{'value':o['id'],'name':o.get('name',o['id'])} for o in options if o['id'] != 'delegate']})
+                    if record.get('agent') == 'zcode':
+                        mode_config = next((c for c in result.get('configOptions',[]) if c.get('category') == 'mode' or c.get('id') == 'mode'), None)
+                        if mode_config:
+                            wanted_mode = record.get('requested_permission_mode') or 'yolo'
+                            mode_choices = mode_config.get('options',[])
+                            if wanted_mode not in [o['value'] for o in mode_choices]: raise RuntimeError('Requested ZCode mode is not offered')
+                            if mode_config.get('currentValue') != wanted_mode:
+                                mode_request_id = 'hapi-zcode-mode-' + str(uuid.uuid4())
+                                child.stdin.write(json.dumps({'jsonrpc':'2.0','id':mode_request_id,'method':'session/set_config_option','params':{'sessionId':native_resume or result['sessionId'],'configId':mode_config['id'],'value':wanted_mode}}) + '\n')
+                                child.stdin.flush()
+                                while True:
+                                    mode_line = child.stdout.readline()
+                                    if not mode_line: raise RuntimeError('ZCode exited during mode change')
+                                    mode_reply=json.loads(mode_line)
+                                    if mode_reply.get('id') == mode_request_id and 'method' not in mode_reply:
+                                        if mode_reply.get('error'): raise RuntimeError('ZCode rejected permission mode')
+                                        result['configOptions']=mode_reply.get('result',{}).get('configOptions',result['configOptions'])
+                                        break
+                                    print(json.dumps(mode_reply,ensure_ascii=False),flush=True)
+                            if result.get('modes'):result['modes']['currentModeId']=wanted_mode
+                            update_state(record_path, {'permission_mode':wanted_mode,'permission_modes':[{'value':o['value'],'name':o.get('name',o['value'])} for o in mode_choices]})
                     config = next((c for c in result.get('configOptions', []) if c.get('category') == 'model' or c.get('id') == 'model'), None)
                     requested = record.get('requested_model')
                     if config:
@@ -210,7 +231,7 @@ def launch(agent, argv):
         native_resume = None
         model = opts.model
     update_state(record_path, {'agent': agent, 'cwd': cwd, 'agent_args': extra,
-        'requested_model': model, 'resume_native_id': native_resume, 'requested_permission_mode': (opts.permission_mode or record.get('requested_permission_mode') or 'fullAccess') if agent == 'codebuddy' else None})
+        'requested_model': model, 'resume_native_id': native_resume, 'requested_permission_mode': opts.permission_mode or record.get('requested_permission_mode') or ('fullAccess' if agent == 'codebuddy' else 'yolo')})
     command = [str(COMMANDS[agent])]
     if agent == 'codebuddy':
         command += (['--model', model] if model else []) + extra

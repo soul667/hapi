@@ -13,8 +13,10 @@ def choices(record):
     if record.get('agent')!='zcode':return []
     return record.get('available_models') or (json.loads(Path('/home/axgu/.config/hapi/integrations/zcode-model-catalog.json').read_text())['configOptions'][0]['options'])
 def modes(record):
-    return record.get('permission_modes') or [{'value':o['id'],'name':o['name']} for o in json.loads(Path('/home/axgu/.config/hapi/integrations/codebuddy-mode-catalog.json').read_text())['modes']['availableModes'] if o['id']!='delegate']
-def info(record):return {'agent':record['agent'],'model':record.get('model') or record.get('requested_model') or ('GLM-5.3' if record['agent']=='zcode' else None),'models':choices(record),'permissionMode':record.get('permission_mode') or record.get('mode') or 'default','permissionModes':modes(record) if record['agent']=='codebuddy' else []}
+    if record.get('permission_modes'):return record['permission_modes']
+    if record['agent']=='zcode':return next(c['options'] for c in json.loads(Path('/home/axgu/.config/hapi/integrations/zcode-model-catalog.json').read_text())['configOptions'] if c.get('category')=='mode')
+    return [{'value':o['id'],'name':o['name']} for o in json.loads(Path('/home/axgu/.config/hapi/integrations/codebuddy-mode-catalog.json').read_text())['modes']['availableModes'] if o['id']!='delegate']
+def info(record):return {'agent':record['agent'],'model':record.get('model') or record.get('requested_model') or ('GLM-5.3' if record['agent']=='zcode' else None),'models':choices(record),'permissionMode':record.get('permission_mode') or record.get('mode') or 'default','permissionModes':modes(record)}
 def switch_model(sid,model,api,token,permission_mode=None):
     with GUARD: lock=LOCKS.setdefault(sid,threading.Lock())
     if not lock.acquire(blocking=False):raise ValueError('此会话正在切换模型，请稍候')
@@ -22,7 +24,7 @@ def switch_model(sid,model,api,token,permission_mode=None):
         path,record=record_for(sid)
         agent=record.get('agent')
         if permission_mode is not None:
-            if agent!='codebuddy':raise ValueError('此会话不支持 CodeBuddy 权限设置')
+            if agent not in ('codebuddy','zcode'):raise ValueError('此会话不支持权限设置')
             target=next((o for o in modes(record) if o['value']==permission_mode),None)
         else:
             if agent!='zcode':raise ValueError('此会话不支持 ZCode 模型选择')

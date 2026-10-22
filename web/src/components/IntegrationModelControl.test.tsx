@@ -29,4 +29,14 @@ describe('integration model control',()=>{
   await waitFor(()=>expect(select).toHaveValue('fullAccess'))
  })
 
+ it('offers ZCode native YOLO separately from model selection',async()=>{
+  const z={...info,permissionMode:'build',permissionModes:[{value:'build',name:'build'},{value:'yolo',name:'yolo'}]}
+  const api={getIntegrationSession:vi.fn().mockResolvedValue(z),setIntegrationPermission:vi.fn().mockResolvedValue({...z,permissionMode:'yolo'})}
+  render(<IntegrationModelControl api={api as unknown as ApiClient} sessionId="zcode-existing" busy={false} active />)
+  const select=await screen.findByRole('combobox',{name:'ZCode 执行权限'})
+  fireEvent.change(select,{target:{value:'yolo'}})
+  await waitFor(()=>expect(api.setIntegrationPermission).toHaveBeenCalledWith('zcode-existing','yolo'))
+  await waitFor(()=>expect(select).toHaveValue('yolo'))
+ })
+
 })

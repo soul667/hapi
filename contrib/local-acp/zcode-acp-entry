@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+unset CLI_API_TOKEN HAPI_DSH_ACP_COMMAND HAPI_DSH_ACP_ARGS_JSON HAPI_DSH_ACP_CONFIG ZCODE_BASE_URL
+export ZCODE_BIN=/opt/ZCode/resources/glm/zcode.cjs
+export ZCODE_NODE=/home/axgu/.local/bin/node
+export ZCODE_ACP_RUNTIME=node
+export ZCODE_PROVIDER=builtin:bigmodel-coding-plan
+export ZCODE_MODEL="${HAPI_ZCODE_MODEL:-GLM-5.3}"
+export ZCODE_ACP_MODE="${HAPI_ZCODE_PERMISSION_MODE:-yolo}"
+export ZCODE_HTTP_PROXY=http://127.0.0.1:7897
+export SHELL=/bin/bash
+exec /home/axgu/.local/bin/node /home/axgu/.local/share/hapi/integrations/zcode-acp/node_modules/zcode-acp-server/dist/index.js "$@"

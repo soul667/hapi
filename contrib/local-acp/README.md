@@ -19,3 +19,9 @@ Validation: native idle switch from GLM-5.3 to GLM-5.3-Flash kept both session I
 CodeBuddy native ACP advertises `fullAccess` (Full Access). The bridge explicitly applies it using `session/set_mode` after native new/load, and records the native acknowledgement. HAPI exposes the available native modes in the existing-session header. The previous launcher hard-coded `--permission-mode default`; it now bootstraps with `bypassPermissions`, then selects the requested ACP mode (new sessions default to `fullAccess`). No synthetic sandbox environment is set and no account-global settings file is changed. Choosing another mode in HAPI persists that selection for subsequent resume.
 
 The live idle CodeBuddy conversation was upgraded with the same native session ID and confirmed `fullAccess`; a task was not interrupted.
+
+## ZCode YOLO
+
+The ZCode ACP bridge applies the account-provided `mode` config option with `session/set_config_option`. New sessions default to native `yolo`; the existing-session header exposes both model and permission selectors. `build` requests confirmations and `guarded` is not equivalent to YOLO. Idle persisted sessions can be restored under YOLO while retaining their native session IDs; currently running sessions are not interrupted automatically. Native permission changes are recorded only after an ACP acknowledgement.
+
+A persisted idle ZCode conversation was restored with the same native session ID and confirmed `yolo`. An empty disposable model-catalog probe could not be resumed because ZCode had not retained its backend session; it was left inactive rather than silently replacing its native context.
