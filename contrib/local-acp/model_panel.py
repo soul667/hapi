@@ -10,13 +10,19 @@ def record_for(sid):
     if p.parent!=STATE or not p.exists():raise ValueError('Not an ACP bridge session')
     return p,json.loads(p.read_text())
 def choices(record):
-    if record.get('agent')!='zcode':return []
-    return record.get('available_models') or (json.loads(Path('/home/axgu/.config/hapi/integrations/zcode-model-catalog.json').read_text())['configOptions'][0]['options'])
+    if record.get('agent')=='codebuddy':
+        catalog=json.loads(Path('/home/axgu/.config/hapi/integrations/codebuddy-mode-catalog.json').read_text())['models']['availableModels']
+        available=record.get('available_models') or [{'value':o['modelId'],'name':o.get('name',o['modelId'])} for o in catalog]
+        by_id={o['modelId']:o for o in catalog}
+        return [{**o,'description':o.get('description') or by_id.get(o['value'],{}).get('description','')} for o in available]
+    if record.get('available_models'):return record['available_models']
+    if record.get('agent')=='zcode':return next(c['options'] for c in json.loads(Path('/home/axgu/.config/hapi/integrations/zcode-model-catalog.json').read_text())['configOptions'] if c.get('category')=='model')
+    return []
 def modes(record):
     if record.get('permission_modes'):return record['permission_modes']
     if record['agent']=='zcode':return next(c['options'] for c in json.loads(Path('/home/axgu/.config/hapi/integrations/zcode-model-catalog.json').read_text())['configOptions'] if c.get('category')=='mode')
     return [{'value':o['id'],'name':o['name']} for o in json.loads(Path('/home/axgu/.config/hapi/integrations/codebuddy-mode-catalog.json').read_text())['modes']['availableModes'] if o['id']!='delegate']
-def info(record):return {'agent':record['agent'],'model':record.get('model') or record.get('requested_model') or ('GLM-5.3' if record['agent']=='zcode' else None),'models':choices(record),'permissionMode':record.get('permission_mode') or record.get('mode') or 'default','permissionModes':modes(record)}
+def info(record):return {'agent':record['agent'],'model':record.get('model') or record.get('requested_model') or ('GLM-5.3' if record['agent']=='zcode' else 'space-bunny' if record['agent']=='codebuddy' else None),'models':choices(record),'permissionMode':record.get('permission_mode') or record.get('mode') or 'default','permissionModes':modes(record)}
 def switch_model(sid,model,api,token,permission_mode=None):
     with GUARD: lock=LOCKS.setdefault(sid,threading.Lock())
     if not lock.acquire(blocking=False):raise ValueError('此会话正在切换模型，请稍候')
@@ -27,7 +33,7 @@ def switch_model(sid,model,api,token,permission_mode=None):
             if agent not in ('codebuddy','zcode'):raise ValueError('此会话不支持权限设置')
             target=next((o for o in modes(record) if o['value']==permission_mode),None)
         else:
-            if agent!='zcode':raise ValueError('此会话不支持 ZCode 模型选择')
+            if agent not in ('zcode','codebuddy'):raise ValueError('此会话不支持模型选择')
             target=next((o for o in choices(record) if model in (o['value'],o.get('name'))),None)
         if not target:raise ValueError('当前账号未提供这个模型')
         session=api('/api/sessions/'+sid,token)['session']

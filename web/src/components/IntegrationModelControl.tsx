@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ApiClient } from '@/api/client'
-type Info = { agent: string; model: string | null; models: { value: string; name: string }[]; permissionMode?: string; permissionModes?: {value:string;name:string}[] }
+type Info = { agent: string; model: string | null; models: { value: string; name: string; description?: string }[]; permissionMode?: string; permissionModes?: {value:string;name:string}[] }
 export function IntegrationModelControl(props: { api: ApiClient | null; sessionId: string; busy: boolean; active: boolean }) {
     const [info, setInfo] = useState<Info | null>(null)
     const [pending, setPending] = useState(false)
@@ -28,6 +28,7 @@ export function IntegrationModelControl(props: { api: ApiClient | null; sessionI
                 {!isBuddy && !current ? <option value="" disabled>当前模型</option> : null}
                 {(isBuddy ? info.permissionModes || [] : info.models).map(model => <option key={model.value} value={model.value}>{model.value === 'fullAccess' ? '全部执行（Full Access）' : model.name}</option>)}
             </select>
+            {isBuddy && info.models.length ? <><label htmlFor={`codebuddy-model-${props.sessionId}`}>CodeBuddy 模型</label><select id={`codebuddy-model-${props.sessionId}`} aria-label="CodeBuddy 会话模型" className="rounded border border-[var(--app-border)] bg-[var(--app-bg)] px-2 py-1" value={current} disabled={pending || props.busy} onChange={async event => {if(!props.api)return;setPending(true);setError('');try{setInfo(await props.api.setIntegrationModel<Info>(props.sessionId,event.target.value))}catch(e){setError(e instanceof Error?e.message:'模型切换失败')}finally{setPending(false)}}}>{info.models.map(model=><option key={model.value} value={model.value}>{model.name}{model.description?' · '+model.description:''}</option>)}</select></> : null}
             {!isBuddy && info.permissionModes?.length ? <><label htmlFor={`zcode-permission-${props.sessionId}`}>执行权限</label><select id={`zcode-permission-${props.sessionId}`} aria-label="ZCode 执行权限" className="rounded border border-[var(--app-border)] bg-[var(--app-bg)] px-2 py-1" value={info.permissionMode} disabled={pending || props.busy} onChange={async event => {
                 if (!props.api) return
                 setPending(true); setError('')
