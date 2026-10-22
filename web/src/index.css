@@ -786,3 +786,9 @@ html[data-glass="cloud-clear"][data-theme="oled"] {
     --cloud-pane: rgba(12, 29, 47, .34);
     --cloud-main: rgba(12, 29, 47, .22);
 }
+
+.workspace-panel { position: relative; z-index: 35; }
+@media (max-width: 1000px) {
+    .workspace-panel { position: fixed; inset: 0; width: 100% !important; z-index: 60; background: var(--app-bg) !important; backdrop-filter: blur(24px); }
+    .workspace-width { display: none; }
+}

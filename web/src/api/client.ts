@@ -832,6 +832,10 @@ export class ApiClient {
         )
     }
 
+    async workspaceRequest<T = { ok: boolean }>(path: string, body?: Record<string, unknown>): Promise<T> {
+        return await this.request<T>('/api/workspace/' + path, body === undefined ? undefined : { method: 'POST', body: JSON.stringify(body) })
+    }
+
     async spawnIntegration(input: { machineId: string; directory: string; agent: 'codebuddy' | 'zcode'; sessionType: 'simple' | 'worktree' }): Promise<SpawnResponse> {
         return await this.request<SpawnResponse>('/api/integrations/spawn', {
             method: 'POST', body: JSON.stringify(input)

@@ -10,7 +10,7 @@ Included source changes:
 - Cloud-photo frosted / clear themes and classic background, with light/dark appearance and browser-local preference.
 - CodeBuddy / WorkBuddy-account CLI and ZCode entries in the creation panel. These require the optional local ACP integration endpoint below.
 - Earlier local Claude model menu changes, lazy syntax language loading and smaller PWA precache. Model menu entries do not guarantee account entitlement.
-- Planned Figma / Notion work panel: see [design and acceptance criteria](docs/plans/workspace-sidebar.md).
+- Experimental Figma / Notion work panel and Edge existing-tab bridge: see [installation and acceptance boundary](contrib/edge-workspace/README.md). Actual logged-in browser/editing acceptance is pending extension pairing.
 
 The live installation is separate from this checkout. No HAPI token, Aliyun credentials, browser profile, proxy subscription, TLS key, service environment or user conversation database is included.
 

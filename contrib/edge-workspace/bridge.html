@@ -1,0 +1,7 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>HAPI · Edge 工作区连接</title>
+<style>body{font:16px system-ui;background:#eff5fc;color:#18334d;max-width:700px;margin:60px auto;padding:24px}input,button{padding:12px;border:1px solid #aabed1;border-radius:8px}input{width:90%;margin:12px 0}button{cursor:pointer}pre{white-space:pre-wrap}p{line-height:1.7}</style>
+<h1>连接你已登录的 Edge</h1><p>只共享 Figma／Notion 标签页。登录凭据留在 Edge，不读取 Cookie。配对后，有 HAPI 访问权限的人可以查看和操作这些标签页。请保留此连接页。</p>
+<p>扩展将这些站点与相关静态域名指定到本机香港代理 7898；HAPI 与内网直连，其余网页保留本机代理 7897。若已有其他扩展或自定义 PAC 管理代理，本扩展会拒绝覆盖。</p>
+<label>在 HAPI 工作面板点“生成配对码”，将代码填在这里：<input id="pair" type="password" autocomplete="off"></label>
+<button id="connect">配对并连接</button> <button id="disconnect">断开并恢复代理</button>
+<pre id="status" role="status">未连接</pre><script type="module" src="bridge.js"></script></html>

@@ -1,6 +1,6 @@
 # Figma / Notion 工作侧栏（待开发）
 
-状态：设计与技术验证待办，未实现、未部署。
+状态：实验版已实现并部署；Edge 扩展首次加载／配对与真实 Figma、Notion 编辑验收待完成。实现说明见 [Edge bridge](../../contrib/edge-workspace/README.md)。
 
 用户已确认：必须复用当前电脑已有的 Figma / Notion 网页登录；不以在独立容器里重新登录作为等价交付。
 

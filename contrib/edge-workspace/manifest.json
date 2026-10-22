@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "HAPI Edge Workspace Bridge",
+  "version": "0.1.0",
+  "description": "Share only Figma and Notion tabs with your authenticated HAPI workspace.",
+  "permissions": ["debugger", "proxy", "storage"],
+  "host_permissions": ["http://127.0.0.1:3011/*", "https://*.figma.com/*", "https://*.notion.com/*", "https://*.notion.so/*"],
+  "background": {"service_worker": "background.js"},
+  "action": {"default_title": "Open HAPI workspace bridge"}
+}
