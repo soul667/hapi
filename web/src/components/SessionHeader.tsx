@@ -159,6 +159,7 @@ export function SessionHeader(props: {
     const { t, locale } = useTranslation()
     const queryClient = useQueryClient()
     const { addToast } = useToast()
+    const [openingInZed, setOpeningInZed] = useState(false)
     const { session, api, onSessionDeleted, onSessionReopened } = props
     const title = useMemo(() => getSessionTitle(session), [session])
     const worktreeBranch = session.metadata?.worktree?.branch?.trim() || null
@@ -459,6 +460,18 @@ export function SessionHeader(props: {
                         </div>
                     </div>
 
+                    {(['codebuddy','zcode'].includes(brand) && session.metadata?.machineId && session.metadata?.path) ? (
+                        <button type="button" disabled={openingInZed || !api}
+                            title="在 Zed 中打开此项目" aria-label="在 Zed 中打开此项目"
+                            className="flex h-8 items-center justify-center gap-1.5 rounded-full px-2 text-[var(--app-hint)] hover:bg-[var(--app-secondary-bg)] hover:text-[var(--app-fg)] disabled:opacity-40"
+                            onClick={async () => {
+                                if (!api) return
+                                setOpeningInZed(true)
+                                try { await api.openProjectInZed(session.id); addToast({title:'已在 Zed 中打开项目',body:'Zed 将使用自己的登录与模型设置。',sessionId:session.id,url:`/sessions/${session.id}`}) }
+                                catch (e) { addToast({title:'无法打开 Zed',body:e instanceof Error ? e.message : '请确认 Zed 已安装',sessionId:session.id,url:`/sessions/${session.id}`}) }
+                                finally { setOpeningInZed(false) }
+                            }}><span aria-hidden="true" className="font-bold">Z</span><span className="hidden xl:inline">在 Zed 中打开</span></button>
+                    ) : null}
                     {props.onToggleFiles ? (
                         <button
                             type="button"

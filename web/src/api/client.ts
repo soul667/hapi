@@ -847,6 +847,9 @@ export class ApiClient {
     async setIntegrationPermission<T>(sessionId: string, permissionMode: string): Promise<T> {
         return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId), { method: 'POST', body: JSON.stringify({ permissionMode }) })
     }
+    async openProjectInZed<T>(sessionId: string): Promise<T> {
+        return await this.request<T>('/api/integrations/zed/open/' + encodeURIComponent(sessionId), { method: 'POST', body: '{}' })
+    }
     async setIntegrationModel<T>(sessionId: string, model: string): Promise<T> {
         return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId), { method: 'POST', body: JSON.stringify({ model }) })
     }
