@@ -1,3 +1,5 @@
+import CodeBuddyColor from '@lobehub/icons/es/CodeBuddy/components/Color'
+import zcodeIcon from '@/assets/zcode.png'
 // Deep component imports on purpose: the package root re-exports ./features,
 // which pulls in uninstalled peer deps (@lobehub/ui, antd). The Mono/Color
 // components only depend on react and es-toolkit.
@@ -18,6 +20,8 @@ import { CopilotIcon } from '@/components/icons/CopilotIcon'
 // package ships no Color variant — or where, like KimiColor, the main glyph is
 // hard-coded #fff and would vanish on the default light theme.
 const FLAVOR_LOGOS: Record<string, IconType> = {
+    codebuddy: CodeBuddyColor,
+    workbuddy: CodeBuddyColor,
     agy: AntigravityColor,
     claude: ClaudeColor,
     codex: CodexColor,
@@ -46,6 +50,7 @@ const UNKNOWN_FLAVOR_BADGE = {
 export function AgentFlavorIcon({ flavor, className }: { flavor?: string | null; className?: string }) {
     const normalized = (flavor ?? '').trim().toLowerCase()
     const sizeClass = className ?? 'h-4 w-4'
+    if (normalized === 'zcode') return <img aria-hidden="true" src={zcodeIcon} alt="" className={sizeClass} />
     if (normalized === 'copilot') {
         return (
             <span

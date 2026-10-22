@@ -25,6 +25,7 @@ export function AgentSelector(props: {
                             checked={props.integration === value}
                             onChange={() => props.onIntegrationChange?.(value)}
                             disabled={props.isDisabled} className="accent-[var(--app-link)]" />
+                        <AgentFlavorIcon flavor={value} className="h-4 w-4 shrink-0" />
                         <span className="text-sm">{value === 'codebuddy' ? 'CodeBuddy / WorkBuddy' : 'ZCode'}</span>
                     </label>
                 ))}

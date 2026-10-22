@@ -1,3 +1,5 @@
+import { getSessionAgentBrand } from '@/lib/integrationBrand'
+import { IntegrationModelControl } from './IntegrationModelControl'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useIsMutating, useQueryClient } from '@tanstack/react-query'
 import type { Session } from '@/types/api'
@@ -167,7 +169,8 @@ export function SessionHeader(props: {
         exact: true,
     }) > 0
     const agentFlavor = session.metadata?.flavor ?? null
-    const agentLabel = agentFlavor?.trim() || null
+    const brand = getSessionAgentBrand(session)
+    const agentLabel = brand === 'zcode' ? 'ZCode' : brand === 'codebuddy' ? 'CodeBuddy / WorkBuddy' : agentFlavor?.trim() || null
     const reasoningEffort = getReasoningEffortForFlavor(
         agentFlavor,
         session.modelReasoningEffort,
@@ -401,7 +404,7 @@ export function SessionHeader(props: {
                             <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden text-xs text-[var(--app-hint)] sm:hidden">
                                 {headerMetadata.agent && agentLabel ? (
                                     <span className="inline-flex shrink-0 items-center gap-1">
-                                        <AgentFlavorIcon flavor={session.metadata?.flavor} className="h-3.5 w-3.5 shrink-0 -translate-y-px" />
+                                        <AgentFlavorIcon flavor={brand} className="h-3.5 w-3.5 shrink-0 -translate-y-px" />
                                         {agentLabel}
                                     </span>
                                 ) : null}
@@ -418,7 +421,7 @@ export function SessionHeader(props: {
                         <div className="hidden flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--app-hint)] sm:flex">
                             {headerMetadata.agent && agentLabel ? (
                                 <span className="inline-flex items-center gap-1">
-                                    <AgentFlavorIcon flavor={session.metadata?.flavor} className="h-3.5 w-3.5 shrink-0 -translate-y-px" />
+                                    <AgentFlavorIcon flavor={brand} className="h-3.5 w-3.5 shrink-0 -translate-y-px" />
                                     {agentLabel}
                                 </span>
                             ) : null}
@@ -510,6 +513,8 @@ export function SessionHeader(props: {
                     </button>
                 </div>
             </div>
+
+            {brand === 'zcode' ? <IntegrationModelControl api={api} sessionId={session.id} busy={session.thinking || Object.keys(session.agentState?.requests ?? {}).length > 0} active={session.active} /> : null}
 
             <SessionActionMenu
                 isOpen={menuOpen}

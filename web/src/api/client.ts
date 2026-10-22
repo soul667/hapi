@@ -1,3 +1,4 @@
+import { updateIntegrationBindings } from '@/lib/integrationBrand'
 import type {
     AttachmentMetadata,
     AuthResponse,
@@ -254,8 +255,15 @@ export class ApiClient {
         return await res.json() as AuthResponse
     }
 
+    private integrationCatalogUntil = 0
+    private async refreshIntegrationBrands(): Promise<void> {
+        if (Date.now() < this.integrationCatalogUntil) return
+        this.integrationCatalogUntil = Date.now() + 10000
+        try { const catalog = await this.request<{ bindings: Record<string, string> }>('/api/integrations/catalog'); updateIntegrationBindings(catalog.bindings) } catch { /* Stock hubs do not provide optional integrations. */ }
+    }
     async getSessions(): Promise<SessionsResponse> {
-        return await this.request<SessionsResponse>('/api/sessions')
+        const [sessions] = await Promise.all([this.request<SessionsResponse>('/api/sessions'), this.refreshIntegrationBrands()])
+        return sessions
     }
 
     async getHealth(): Promise<HubHealthResponse> {
@@ -352,7 +360,8 @@ export class ApiClient {
     }
 
     async getSession(sessionId: string): Promise<SessionResponse> {
-        return await this.request<SessionResponse>(`/api/sessions/${encodeURIComponent(sessionId)}`)
+        const [session] = await Promise.all([this.request<SessionResponse>(`/api/sessions/${encodeURIComponent(sessionId)}`), this.refreshIntegrationBrands()])
+        return session
     }
 
     async getSessionExport(
@@ -830,6 +839,13 @@ export class ApiClient {
                 body: JSON.stringify({ paths })
             }
         )
+    }
+
+    async getIntegrationSession<T>(sessionId: string): Promise<T> {
+        return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId))
+    }
+    async setIntegrationModel<T>(sessionId: string, model: string): Promise<T> {
+        return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId), { method: 'POST', body: JSON.stringify({ model }) })
     }
 
     async workspaceRequest<T = { ok: boolean }>(path: string, body?: Record<string, unknown>): Promise<T> {
