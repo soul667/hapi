@@ -4,6 +4,8 @@ import { AgentFlavorIcon } from '@/components/AgentFlavorIcon'
 import { useTranslation } from '@/lib/use-translation'
 
 export function AgentSelector(props: {
+    integration?: string | null
+    onIntegrationChange?: (value: 'codebuddy' | 'zcode') => void
     agent: AgentType
     agents: readonly AgentType[]
     isDisabled: boolean
@@ -17,6 +19,15 @@ export function AgentSelector(props: {
                 {t('newSession.agent')}
             </label>
             <div className="flex flex-wrap gap-x-3 gap-y-2">
+                {(['codebuddy', 'zcode'] as const).map(value => (
+                    <label key={value} className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="agent" value={value}
+                            checked={props.integration === value}
+                            onChange={() => props.onIntegrationChange?.(value)}
+                            disabled={props.isDisabled} className="accent-[var(--app-link)]" />
+                        <span className="text-sm">{value === 'codebuddy' ? 'CodeBuddy / WorkBuddy' : 'ZCode'}</span>
+                    </label>
+                ))}
                 {props.agents.map((agentType) => (
                     <label
                         key={agentType}
@@ -26,7 +37,7 @@ export function AgentSelector(props: {
                             type="radio"
                             name="agent"
                             value={agentType}
-                            checked={props.agent === agentType}
+                            checked={!props.integration && props.agent === agentType}
                             onChange={() => props.onAgentChange(agentType)}
                             disabled={props.isDisabled}
                             className="accent-[var(--app-link)]"

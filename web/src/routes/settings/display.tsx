@@ -1,3 +1,4 @@
+import { GlassThemePicker } from '@/components/settings/GlassThemePicker'
 import { useEffect, useState } from 'react'
 import { useTranslation } from '@/lib/use-translation'
 import { getAppearanceOptions, useAppearance } from '@/hooks/useTheme'
@@ -164,6 +165,7 @@ export default function SettingsDisplayPage() {
                     options={getAppearanceOptions().map((option) => ({ value: option.value, label: t(option.labelKey) }))}
                     onChange={setAppearance}
                 />
+                <GlassThemePicker />
                 <ColorThemePicker />
                 <ThemeColorControls />
             </SettingsSection>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 
 vi.mock('@/lib/use-translation', () => ({
     useTranslation: () => ({ t: (key: string) => key }),
@@ -15,6 +15,16 @@ const baseProps = {
 }
 
 describe('ModelSelector', () => {
+    it('passes the exact Claude version ID when a versioned option is selected', () => {
+        const onModelChange = vi.fn()
+        const { container } = render(
+            <ModelSelector {...baseProps} agent="claude" model="auto" onModelChange={onModelChange} />
+        )
+        const select = container.querySelector('select')!
+        expect(select.querySelector('option[value="claude-sonnet-5-5"]')?.textContent).toBe('Sonnet 5.5')
+        fireEvent.change(select, { target: { value: 'claude-sonnet-5-5' } })
+        expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5-5')
+    })
     it('renders provider-grouped options as optgroups', () => {
         const { container } = render(
             <ModelSelector

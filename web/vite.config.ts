@@ -196,6 +196,10 @@ export default defineConfig({
             },
             injectManifest: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+                // Syntax grammars are loaded on demand by shiki.ts. Keep them
+                // out of the initial PWA precache so service-worker install
+                // does not download every language for a simple chat page.
+                globIgnores: ['**/assets/{shellscript,powershell,json,yaml,toml,xml,ini,markdown,html,css,scss,javascript,typescript,jsx,tsx,sql,graphql,c,rust,go,java,kotlin,python,php,swift,csharp,dockerfile,make,diff,github-light,github-dark}-*.js'],
                 // The SPA entry contains the complete multi-agent control surface.
                 // Keep it available offline after adding Pi history import instead
                 // of silently dropping the entry chunk from the PWA precache.

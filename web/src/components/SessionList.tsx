@@ -1,3 +1,4 @@
+import { BulkSessionSelection, useBulkSessionSelection } from './BulkSessionSelection'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SessionListScrollAnchor } from './SessionListScrollAnchor'
 import type { SessionSummary } from '@/types/api'
@@ -910,6 +911,7 @@ function SessionItem(props: {
         machineLabel,
         lastSeenVersion
     } = props
+    const bulk = useBulkSessionSelection()
     const { haptic } = usePlatform()
     const [menuOpen, setMenuOpen] = useState(false)
     const [menuAnchorPoint, setMenuAnchorPoint] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
@@ -983,11 +985,13 @@ function SessionItem(props: {
 
     const longPressHandlers = useLongPress({
         onLongPress: (point) => {
+            if (bulk?.selecting) return
             haptic.impact('medium')
             setMenuAnchorPoint(point)
             setMenuOpen(true)
         },
         onClick: () => {
+            if (bulk?.selecting) { bulk.toggle(s.id); return }
             if (!menuOpen) {
                 onSelect(s.id)
             }
@@ -1016,12 +1020,17 @@ function SessionItem(props: {
             <button
                 type="button"
                 {...longPressHandlers}
+                role={bulk?.selecting ? 'checkbox' : undefined}
+                aria-checked={bulk?.selecting ? bulk.selected.has(s.id) : undefined}
+                aria-label={bulk?.selecting ? `选择会话：${sessionName}${s.active ? '（运行中，需先归档）' : ''}` : undefined}
+                disabled={bulk?.selecting && (s.active || bulk.pending)}
                 data-session-scroll-anchor
                 className={`session-list-item group/session-row flex w-full flex-col gap-1 py-2 pl-2.5 pr-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-link)] select-none rounded-lg ${selected ? 'bg-[var(--app-secondary-bg)]' : ''}`}
                 style={{ WebkitTouchCallout: 'none' }}
                 aria-current={selected ? 'page' : undefined}
                 aria-describedby={describedBy}
             >
+                {bulk?.selecting ? <span aria-hidden="true" className="text-xs text-[var(--app-link)]">{bulk.selected.has(s.id) ? '☑ 已选' : s.active ? '运行中' : '☐ 选择'}</span> : null}
                 <SessionRowSummary
                     session={s}
                     showPath={showPath}
@@ -1896,7 +1905,7 @@ export function SessionList(props: {
     }, [])
 
     return (
-        <div className="flex min-h-0 w-full flex-1 flex-col">
+        <BulkSessionSelection sessions={machineFilteredSessions} api={api} onRefresh={props.onRefresh}>
             <div className="session-list-scrollbar-offset mx-auto w-full max-w-content shrink-0">
             {showHeaderRow ? (
                 <div className="flex items-center gap-1 px-2 py-1">
@@ -2113,6 +2122,6 @@ export function SessionList(props: {
                 centerTitle
                 destructive
             />
-        </div>
+        </BulkSessionSelection>
     )
 }

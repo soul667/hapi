@@ -111,6 +111,7 @@ export function NewSession(props: {
     const [legacyYoloAgent] = useState(
         () => (loadPreferredYoloMode() ? loadPreferredAgent() : null)
     )
+    const [integration, setIntegration] = useState<'codebuddy' | 'zcode' | null>(null)
     const [model, setModel] = useState('auto')
     const [cursorSelectedBase, setCursorSelectedBase] = useState('auto')
     const pendingCursorBaseRef = useRef<string | null>(null)
@@ -297,14 +298,14 @@ export function NewSession(props: {
             .map((entry) => entry.agent as AgentType),
         [agentAvailability.agents]
     )
-    const selectedAgentAvailable = availableAgents.includes(agent)
+    const selectedAgentAvailable = Boolean(integration) || availableAgents.includes(agent)
 
     useEffect(() => {
-        if (agentAvailability.isLoading || agentAvailability.error || availableAgents.length === 0) return
+        if (integration || agentAvailability.isLoading || agentAvailability.error || availableAgents.length === 0) return
         if (availableAgents.includes(agent)) return
         preserveRestoredDraftRef.current = false
         setAgent(availableAgents[0]!)
-    }, [agent, agentAvailability.error, agentAvailability.isLoading, availableAgents])
+    }, [agent, integration, agentAvailability.error, agentAvailability.isLoading, availableAgents])
     const codexModelsState = useCodexModels({
         api: props.api,
         machineId,
@@ -1624,7 +1625,9 @@ export function NewSession(props: {
                 return
             }
 
-            const result = await spawnSession({
+            const result = integration
+                ? await props.api!.spawnIntegration({ machineId, directory: trimmedDirectory, agent: integration, sessionType })
+                : await spawnSession({
                 machineId,
                 directory: trimmedDirectory,
                 agent,
@@ -1752,7 +1755,7 @@ export function NewSession(props: {
                 sessionType={sessionType}
                 worktreeName={worktreeName}
                 worktreeInputRef={worktreeInputRef}
-                isDisabled={isFormDisabled}
+                isDisabled={isFormDisabled || Boolean(integration)}
                 onSessionTypeChange={setSessionType}
                 onWorktreeNameChange={setWorktreeName}
             />
@@ -1760,8 +1763,16 @@ export function NewSession(props: {
                 agent={agent}
                 agents={availableAgents}
                 isDisabled={isFormDisabled || agentAvailability.isLoading || Boolean(agentAvailability.error)}
-                onAgentChange={handleAgentChange}
+                integration={integration}
+                onIntegrationChange={(value) => { handleAgentChange('dsh'); setIntegration(value); setSessionType('simple') }}
+                onAgentChange={(value) => { setIntegration(null); handleAgentChange(value) }}
             />
+            {integration ? (
+                <div className="px-3 py-2 text-xs text-[var(--app-hint)]">
+                    {integration === 'codebuddy' ? '使用同账号的 CodeBuddy CLI；不导入 WorkBuddy 桌面聊天。' : '使用 ZCode GLM-5.3 和现有本机登录。'}
+                    {' '}ACP 桥接，保留操作确认；暂只支持普通目录会话。
+                </div>
+            ) : null}
             {agentAvailability.isLoading ? (
                 <div className="px-3 py-2 text-xs text-[var(--app-hint)]">
                     {t('newSession.agentAvailabilityLoading')}

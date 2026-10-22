@@ -317,6 +317,17 @@ describe('NewSession launch preferences', () => {
         savePreferredAgent('codex')
     })
 
+    it.each(['codebuddy', 'zcode'] as const)('creates %s through the authenticated integration API when DSH is not listed', async (agent) => {
+        mocks.availableAgents = [{ agent: 'claude', available: true }]
+        const spawnIntegration = vi.fn().mockResolvedValue({ type: 'success', sessionId: 'bridge-session' })
+        render(<NewSession api={{ ...api, spawnIntegration } as unknown as ApiClient} machines={[machine]} onSuccess={mocks.onSuccess} onCancel={() => {}} initialDirectory="/home/axgu" initialMachineId="machine-1" />)
+        fireEvent.click(screen.getByRole('radio', { name: agent === 'codebuddy' ? 'CodeBuddy / WorkBuddy' : 'ZCode' }))
+        fireEvent.click(screen.getByTestId('create'))
+        await waitFor(() => expect(spawnIntegration).toHaveBeenCalledWith(expect.objectContaining({ agent, directory: '/home/axgu', sessionType: 'simple' })))
+        expect(mocks.spawnSession).not.toHaveBeenCalled()
+        await waitFor(() => expect(mocks.onSuccess).toHaveBeenCalledWith('bridge-session'))
+    })
+
     it('hides unavailable Agents and falls back to the first available Agent', async () => {
         savePreferredAgent('claude')
         mocks.availableAgents.splice(

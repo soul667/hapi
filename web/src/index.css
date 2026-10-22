@@ -695,3 +695,94 @@ html[data-theme="oled"] .shiki span:not([data-line-number]) {
     transition: none;
   }
 }
+
+/* Cloud photograph themes. Only the two shell panes blur, never each chat row. */
+html[data-glass^="cloud-"] {
+    --app-bg: rgba(244, 249, 254, .52) !important;
+    --app-secondary-bg: rgba(236, 245, 253, .64) !important;
+    --app-border: rgba(255, 255, 255, .55) !important;
+    --app-divider: rgba(43, 77, 108, .13) !important;
+    --app-fg: #163149 !important;
+    --app-hint: #496177 !important;
+    --app-link: #165e9e !important;
+    --app-chat-user-bg: rgba(232, 244, 255, .84) !important;
+    --app-chat-user-surface-bg: rgba(232, 244, 255, .84) !important;
+    --app-tool-card-bg: rgba(240, 247, 253, .86) !important;
+    --app-tool-group-bg: rgba(240, 247, 253, .82) !important;
+    --cloud-overlay: rgba(229, 241, 252, .16);
+    --cloud-pane: rgba(242, 248, 255, .44);
+    --cloud-main: rgba(242, 248, 255, .25);
+    --cloud-blur: 18px;
+}
+html[data-glass="cloud-clear"] {
+    --cloud-pane: rgba(242, 248, 255, .25);
+    --cloud-main: rgba(242, 248, 255, .13);
+    --cloud-blur: 9px;
+}
+html[data-glass^="cloud-"][data-theme="dark"],
+html[data-glass^="cloud-"][data-theme="oled"] {
+    --app-bg: rgba(16, 32, 49, .70) !important;
+    --app-secondary-bg: rgba(29, 51, 73, .72) !important;
+    --app-border: rgba(209, 230, 251, .16) !important;
+    --app-divider: rgba(209, 230, 251, .13) !important;
+    --app-fg: #edf5ff !important;
+    --app-hint: #b7cadf !important;
+    --app-link: #a5d6ff !important;
+    --app-chat-user-bg: rgba(31, 58, 85, .9) !important;
+    --app-chat-user-surface-bg: rgba(31, 58, 85, .9) !important;
+    --app-tool-card-bg: rgba(19, 36, 54, .92) !important;
+    --app-tool-group-bg: rgba(19, 36, 54, .88) !important;
+    --cloud-overlay: rgba(4, 16, 31, .28);
+    --cloud-pane: rgba(12, 29, 47, .50);
+    --cloud-main: rgba(12, 29, 47, .34);
+}
+html[data-glass^="cloud-"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(var(--cloud-overlay), var(--cloud-overlay)), url('./assets/cloud-sea.webp') center center / cover no-repeat;
+}
+html[data-glass^="cloud-"] #root { position: relative; z-index: 1; }
+html[data-glass^="cloud-"] .glass-sidebar,
+html[data-glass^="cloud-"] .glass-content {
+    background: var(--cloud-pane);
+    -webkit-backdrop-filter: blur(var(--cloud-blur)) saturate(1.15);
+    backdrop-filter: blur(var(--cloud-blur)) saturate(1.15);
+    border: 1px solid var(--app-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+html[data-glass^="cloud-"] .glass-content { background: var(--cloud-main); }
+html[data-glass^="cloud-"] .session-list-item { margin-block: 2px; }
+html[data-glass^="cloud-"] .session-list-item:hover { background: var(--app-secondary-bg); }
+/* Menus outside the shell have a dense surface so the photo cannot obscure text. */
+html[data-glass^="cloud-"] [role="dialog"],
+html[data-glass^="cloud-"] [role="menu"],
+html[data-glass^="cloud-"] [data-radix-popper-content-wrapper] {
+    background-color: color-mix(in srgb, var(--app-bg) 95%, white);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+}
+@media (max-width: 768px) {
+    html[data-glass^="cloud-"] { --cloud-blur: 10px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+    html[data-glass^="cloud-"] { --cloud-pane: var(--app-bg); --cloud-main: var(--app-bg); --cloud-blur: 0px; }
+    html[data-glass^="cloud-"] body::before { display: none; }
+}
+@supports not (backdrop-filter: blur(1px)) {
+    html[data-glass^="cloud-"] .glass-sidebar,
+    html[data-glass^="cloud-"] .glass-content { background: var(--app-secondary-bg); }
+}
+
+html[data-glass^="cloud-"] .glass-settings-card {
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 32px rgba(25, 55, 85, .07), inset 0 1px 0 rgba(255,255,255,.18);
+}
+html[data-glass="cloud-clear"][data-theme="dark"],
+html[data-glass="cloud-clear"][data-theme="oled"] {
+    --cloud-pane: rgba(12, 29, 47, .34);
+    --cloud-main: rgba(12, 29, 47, .22);
+}

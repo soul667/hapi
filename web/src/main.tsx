@@ -1,3 +1,4 @@
+import { initializeGlassTheme } from '@/hooks/useGlassTheme'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -36,6 +37,7 @@ function getInitialPath(): string {
 async function bootstrap() {
     installScrollRestorationGuard()
     initializeFontScale()
+    initializeGlassTheme()
 
     // Only load Telegram SDK in Telegram environment (with 3s timeout)
     const isTelegram = isTelegramEnvironment()

@@ -3,12 +3,11 @@ import {
     AGY_MODEL_PRESETS,
     CLAUDE_EFFORT_LABELS,
     CLAUDE_EFFORT_LEVELS,
-    CLAUDE_MODEL_LABELS,
-    CLAUDE_MODEL_PRESETS,
     GEMINI_MODEL_LABELS,
     GEMINI_MODEL_PRESETS
 } from '@hapi/protocol'
 import type { AgentFlavor } from '@hapi/protocol'
+import { CLAUDE_MODEL_OPTIONS } from '@/lib/claudeModelCatalog'
 
 export type AgentType = AgentFlavor
 export type SessionType = 'simple' | 'worktree'
@@ -33,7 +32,7 @@ export const MODEL_OPTIONS: Record<AgentType, { value: string; label: string }[]
     ],
     claude: [
         { value: 'auto', label: 'Default' },
-        ...modelPresetOptions(CLAUDE_MODEL_PRESETS, CLAUDE_MODEL_LABELS),
+        ...CLAUDE_MODEL_OPTIONS,
     ],
     codex: [
         { value: 'auto', label: 'Default' },

@@ -832,6 +832,12 @@ export class ApiClient {
         )
     }
 
+    async spawnIntegration(input: { machineId: string; directory: string; agent: 'codebuddy' | 'zcode'; sessionType: 'simple' | 'worktree' }): Promise<SpawnResponse> {
+        return await this.request<SpawnResponse>('/api/integrations/spawn', {
+            method: 'POST', body: JSON.stringify(input)
+        })
+    }
+
     async spawnSession(
         machineId: string,
         directory: string,

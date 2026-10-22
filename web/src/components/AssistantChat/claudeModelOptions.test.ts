@@ -3,28 +3,19 @@ import { getClaudeComposerModelOptions, getNextClaudeComposerModel } from './cla
 
 describe('getClaudeComposerModelOptions', () => {
     it('includes the active non-preset Claude model in the options list', () => {
-        expect(getClaudeComposerModelOptions('claude-opus-4-1-20250805')).toEqual([
+        expect(getClaudeComposerModelOptions('claude-opus-4-1-20250805')).toEqual(expect.arrayContaining([
             { value: null, label: 'Default' },
             { value: 'claude-opus-4-1-20250805', label: 'claude-opus-4-1-20250805' },
-            { value: 'sonnet', label: 'Sonnet' },
-            { value: 'sonnet[1m]', label: 'Sonnet 1M' },
-            { value: 'opus', label: 'Opus' },
-            { value: 'opus[1m]', label: 'Opus 1M' },
-            { value: 'fable', label: 'Fable' },
-            { value: 'fable[1m]', label: 'Fable 1M' },
-        ])
+            { value: 'claude-sonnet-5-5', label: 'Sonnet 5.5' },
+        ]))
     })
 
     it('does not duplicate preset Claude models', () => {
-        expect(getClaudeComposerModelOptions('opus')).toEqual([
-            { value: null, label: 'Default' },
-            { value: 'sonnet', label: 'Sonnet' },
-            { value: 'sonnet[1m]', label: 'Sonnet 1M' },
-            { value: 'opus', label: 'Opus' },
-            { value: 'opus[1m]', label: 'Opus 1M' },
-            { value: 'fable', label: 'Fable' },
-            { value: 'fable[1m]', label: 'Fable 1M' },
-        ])
+        for (const model of ['opus', 'claude-sonnet-5-5', 'claude-opus-5-5']) {
+            const options = getClaudeComposerModelOptions(model)
+            expect(options.filter((option) => option.value === model)).toHaveLength(1)
+            expect(options[0]).toEqual({ value: null, label: 'Default' })
+        }
     })
 })
 
