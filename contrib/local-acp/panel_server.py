@@ -43,10 +43,10 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 sid=self.path.rsplit('/',1)[-1];api('/api/sessions/'+sid,token)
                 length=int(self.headers.get('Content-Length','0'));assert 0<length<=4096
-                data=json.loads(self.rfile.read(length));return self.reply(200,switch_model(sid,data.get('model'),api,token))
+                data=json.loads(self.rfile.read(length));return self.reply(200,switch_model(sid,data.get('model'),api,token,permission_mode=data.get('permissionMode')))
             except HTTPError as e:return self.reply(e.code,{'error':'Session access denied'})
             except ValueError as e:return self.reply(409,{'error':str(e)})
-            except Exception:return self.reply(500,{'error':'模型切换失败，请检查代理服务'})
+            except Exception:return self.reply(500,{'error':'模型／权限变更失败，请检查代理服务'})
         if self.path!='/api/integrations/spawn':return self.reply(404,{'error':'Not found'})
         token=self.headers.get('Authorization','')
         if not token.startswith('Bearer '):return self.reply(401,{'error':'Unauthorized'})

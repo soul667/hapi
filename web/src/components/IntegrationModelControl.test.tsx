@@ -19,4 +19,14 @@ describe('integration model control',()=>{
   expect(await screen.findByRole('combobox')).toBeDisabled()
   expect(api.setIntegrationModel).not.toHaveBeenCalled()
  })
+ it('offers native CodeBuddy Full Access and applies it to the existing session',async()=>{
+  const buddy={agent:'codebuddy',model:null,models:[],permissionMode:'default',permissionModes:[{value:'default',name:'Default'},{value:'fullAccess',name:'Full Access'}]}
+  const api={getIntegrationSession:vi.fn().mockResolvedValue(buddy),setIntegrationPermission:vi.fn().mockResolvedValue({...buddy,permissionMode:'fullAccess'})}
+  render(<IntegrationModelControl api={api as unknown as ApiClient} sessionId="buddy-existing" busy={false} active />)
+  const select=await screen.findByRole('combobox',{name:'CodeBuddy 执行权限'})
+  fireEvent.change(select,{target:{value:'fullAccess'}})
+  await waitFor(()=>expect(api.setIntegrationPermission).toHaveBeenCalledWith('buddy-existing','fullAccess'))
+  await waitFor(()=>expect(select).toHaveValue('fullAccess'))
+ })
+
 })

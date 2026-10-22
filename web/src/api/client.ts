@@ -844,6 +844,9 @@ export class ApiClient {
     async getIntegrationSession<T>(sessionId: string): Promise<T> {
         return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId))
     }
+    async setIntegrationPermission<T>(sessionId: string, permissionMode: string): Promise<T> {
+        return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId), { method: 'POST', body: JSON.stringify({ permissionMode }) })
+    }
     async setIntegrationModel<T>(sessionId: string, model: string): Promise<T> {
         return await this.request<T>('/api/integrations/session/' + encodeURIComponent(sessionId), { method: 'POST', body: JSON.stringify({ model }) })
     }

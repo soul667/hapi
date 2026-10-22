@@ -1769,7 +1769,7 @@ export function NewSession(props: {
             />
             {integration ? (
                 <div className="px-3 py-2 text-xs text-[var(--app-hint)]">
-                    {integration === 'codebuddy' ? '使用同账号的 CodeBuddy CLI；不导入 WorkBuddy 桌面聊天。' : '使用 ZCode GLM-5.3 和现有本机登录。'}
+                    {integration === 'codebuddy' ? '使用同账号的 CodeBuddy CLI；默认全部执行（Full Access），不导入 WorkBuddy 桌面聊天。' : '使用 ZCode GLM-5.3 和现有本机登录。'}
                     {' '}ACP 桥接，保留操作确认；暂只支持普通目录会话。
                 </div>
             ) : null}

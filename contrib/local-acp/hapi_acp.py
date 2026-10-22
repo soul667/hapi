@@ -105,6 +105,26 @@ def proxy(record_path, command):
                 pending.pop(message['id'])
                 result = message.get('result')
                 if isinstance(result, dict):
+                    if record.get('agent') == 'codebuddy':
+                        modes = result.get('modes') or {}
+                        options = modes.get('availableModes', [])
+                        wanted_mode = record.get('requested_permission_mode') or 'fullAccess'
+                        if wanted_mode not in [o['id'] for o in options]: raise RuntimeError('Requested CodeBuddy permission mode not offered')
+                        if modes.get('currentModeId') != wanted_mode:
+                            mode_request_id = 'hapi-permission-' + str(uuid.uuid4())
+                            child.stdin.write(json.dumps({'jsonrpc':'2.0','id':mode_request_id,'method':'session/set_mode','params':{'sessionId':native_resume or result['sessionId'],'modeId':wanted_mode}}) + '\n')
+                            child.stdin.flush()
+                            while True:
+                                mode_line = child.stdout.readline()
+                                if not mode_line: raise RuntimeError('CodeBuddy exited while setting permissions')
+                                mode_reply = json.loads(mode_line)
+                                if mode_reply.get('id') == mode_request_id and 'method' not in mode_reply:
+                                    if mode_reply.get('error'): raise RuntimeError('CodeBuddy rejected permission mode')
+                                    modes['currentModeId'] = wanted_mode
+                                    break
+                                print(json.dumps(mode_reply,ensure_ascii=False),flush=True)
+                        result['modes'] = modes
+                        update_state(record_path, {'permission_mode':wanted_mode,'permission_modes':[{'value':o['id'],'name':o.get('name',o['id'])} for o in options if o['id'] != 'delegate']})
                     config = next((c for c in result.get('configOptions', []) if c.get('category') == 'model' or c.get('id') == 'model'), None)
                     requested = record.get('requested_model')
                     if config:
@@ -155,6 +175,7 @@ def launch(agent, argv):
     parser.add_argument('--resume', metavar='HAPI_SESSION_ID', help='Resume a session created by this bridge')
     parser.add_argument('--cwd', help='Project directory; defaults to the current directory')
     parser.add_argument('--model', help='Native agent model for a new session')
+    parser.add_argument('--permission-mode', help='Native CodeBuddy ACP permission mode')
     opts, extra = parser.parse_known_args(argv)
     if agent == 'zcode' and extra:
         parser.error('Unsupported ZCode arguments: ' + ' '.join(extra))
@@ -162,6 +183,7 @@ def launch(agent, argv):
     BY_HAPI.mkdir(parents=True, exist_ok=True, mode=0o700)
     hub = Hub()
     existing = opts.resume
+    record = {}
     if existing:
         uuid.UUID(existing)
         index = BY_HAPI / (existing + '.json')
@@ -188,7 +210,7 @@ def launch(agent, argv):
         native_resume = None
         model = opts.model
     update_state(record_path, {'agent': agent, 'cwd': cwd, 'agent_args': extra,
-        'requested_model': model, 'resume_native_id': native_resume})
+        'requested_model': model, 'resume_native_id': native_resume, 'requested_permission_mode': (opts.permission_mode or record.get('requested_permission_mode') or 'fullAccess') if agent == 'codebuddy' else None})
     command = [str(COMMANDS[agent])]
     if agent == 'codebuddy':
         command += (['--model', model] if model else []) + extra

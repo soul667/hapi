@@ -514,7 +514,7 @@ export function SessionHeader(props: {
                 </div>
             </div>
 
-            {brand === 'zcode' ? <IntegrationModelControl api={api} sessionId={session.id} busy={session.thinking || Object.keys(session.agentState?.requests ?? {}).length > 0} active={session.active} /> : null}
+            {(brand === 'zcode' || brand === 'codebuddy') ? <IntegrationModelControl api={api} sessionId={session.id} busy={session.thinking || Object.keys(session.agentState?.requests ?? {}).length > 0} active={session.active} /> : null}
 
             <SessionActionMenu
                 isOpen={menuOpen}
